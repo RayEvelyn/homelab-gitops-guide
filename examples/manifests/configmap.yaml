@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-settings
+  namespace: demo
+data:
+  message: 'A reviewed, non-secret configuration change'

@@ -1,0 +1,10 @@
+# Copy to config.yaml in the agent CONFIGURATION project's default branch.
+# Replace with one explicitly authorized private project. No token belongs here.
+ci_access:
+  projects:
+    - id: homelab/service-manifests
+      environments:
+        - lab
+      protected_branches_only: true
+# Uses the agent service account's namespace-scoped permissions.
+# CI-job impersonation is a separate tier-dependent option; not assumed here.

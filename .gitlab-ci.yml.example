@@ -1,0 +1,41 @@
+# Disabled by .example suffix. Copy only after project/branch/runner/RBAC review.
+# KUBECTL_IMAGE must be a reviewed image@sha256:... containing kubectl and Bash,
+# compatible with the target Kubernetes version and trusting your KAS TLS CA.
+stages: [deploy]
+manual_lab_deploy:
+  stage: deploy
+  image:
+    name: $KUBECTL_IMAGE
+    entrypoint: ['']
+  tags: [protected-deploy]
+  resource_group: demo-lab
+  environment:
+    name: lab
+  variables:
+    KUBE_CONTEXT: homelab/cluster-bootstrap:lab
+    DEPLOY_NAMESPACE: demo
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true"'
+      when: manual
+    - when: never
+  allow_failure: false
+  script:
+    - |
+      set -euo pipefail
+      test "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH"
+      test "$CI_COMMIT_REF_PROTECTED" = true
+      test -n "${KUBECONFIG:-}" && test -f "$KUBECONFIG"
+      case "$KUBECTL_IMAGE" in *@sha256:*) ;; *) echo 'Digest pin required'; exit 1 ;; esac
+      test "$DEPLOY_NAMESPACE" = demo
+      kubectl config use-context "$KUBE_CONTEXT"
+      kubectl auth can-i get configmaps --namespace="$DEPLOY_NAMESPACE" | grep -qx yes
+      kubectl auth can-i create configmaps --namespace="$DEPLOY_NAMESPACE" | grep -qx yes
+      kubectl auth can-i patch configmaps --namespace="$DEPLOY_NAMESPACE" | grep -qx yes
+      if kubectl auth can-i get secrets --namespace="$DEPLOY_NAMESPACE"; then
+        echo 'Unexpected Secret read permission: review RBAC'; exit 1
+      fi
+      kubectl apply --dry-run=server --namespace="$DEPLOY_NAMESPACE" -f examples/manifests/
+      kubectl apply --namespace="$DEPLOY_NAMESPACE" -f examples/manifests/
+      kubectl get configmap demo-settings --namespace="$DEPLOY_NAMESPACE"
+# This deploys only a non-secret ConfigMap; add workload RBAC/rollout checks
+# deliberately after review. It is CI deployment, not continuous reconciliation.

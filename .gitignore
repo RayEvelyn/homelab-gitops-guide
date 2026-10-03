@@ -1,0 +1,8 @@
+.env
+*.tfstate*
+*.tfplan
+*.pem
+*.key
+secrets/
+kubeconfig*
+.DS_Store
