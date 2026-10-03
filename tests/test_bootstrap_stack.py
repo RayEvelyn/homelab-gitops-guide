@@ -41,7 +41,9 @@ class BootstrapTests(unittest.TestCase):
                 run.assert_not_called()
 
     def phase_mock(self, action, fail_preflight=False):
-        with tempfile.TemporaryDirectory() as d:
+        # Valid persistent-state fixtures must stay outside OS/runner temp paths.
+        # Linux uses /tmp; production's refusal is intentional and tested separately.
+        with tempfile.TemporaryDirectory(dir=Path.home()) as d:
             root = Path(d)
             public = root / 'key.pub'; public.write_text('ssh-ed25519 AAAA example\n')
             config = json.loads((Path(__file__).resolve().parents[1] / 'configs/gitlab-starter.example.json').read_text())
