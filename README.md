@@ -1,6 +1,20 @@
 # Start here: a homelab you can explain, rebuild and recover
 
-This guide connects the individual examples into a practical learning sequence. Build local networking and DNS first, bootstrap GitLab independently, put your remaining infrastructure code into your own GitLab projects, and add scoped automation in stages. **Public teaching code is safe to inspect: opening it does not create accounts or apply infrastructure. Hosted CI validates it; private home GitLab deployment is explicitly opt-in.** Commands are examples to adapt and review before running in your own lab.
+This guide connects the individual examples into a practical learning sequence. Build local networking and DNS first, choose GitHub or GitLab for both source and execution, and add scoped automation in stages. Self-managed GitLab is bootstrapped independently only in the GitLab path. **Public teaching code is safe to inspect: opening it does not create accounts or apply infrastructure. Hosted CI validates it; either private deployment path is explicitly opt-in.** Commands are examples to adapt and review before running in your own lab.
+
+## Choose one source and execution platform
+
+| Choice | Private source of truth | Deployment execution | Cluster access |
+|---|---|---|---|
+| [GitHub path](docs/GITHUB-CI.md) | Your private GitHub repository | GitHub Actions and its dedicated runner | Direct scoped kubeconfig for cluster jobs; no GitLab/KAS prerequisite |
+| [GitLab path](docs/GITLAB-CI.md) | Your private GitLab project | GitLab CI and its dedicated runner | Optional GitLab agent/KAS for cluster jobs |
+
+The canonical public GitHub repository distributes examples and runs unprivileged validation. Choose one private source and runner platform for each real target; do not combine a GitHub source checkout with instructions for a GitLab runner, or let both pipelines manage the same resource. GitLab-first bootstrap applies only when you select self-managed GitLab. GitHub can bootstrap the GitLab VM as a service without depending on that service's CI. KAS is a GitLab integration, not a universal prerequisite for Kubernetes or GitOps. Flux or another chosen reconciler can use either supported Git source.
+
+
+## Start small with the executable local bootstrap
+
+Use [BOOTSTRAP.md](docs/BOOTSTRAP.md) for the actual `scripts/bootstrap-stack.sh` entrypoint: choose a GitLab-only starter or optional foundation components, prepare networking/DNS, check real Proxmox capacity, create/review protected saved plans, then explicitly provision and deploy. No GPU is needed. The optional foundation is a resource budget, not a requirement to install every service; insufficient or unknown capacity stops the run before apply. GitLab local bootstrap is required only for the self-managed GitLab execution path.
 
 ## Why GitOps?
 
@@ -8,18 +22,18 @@ An understandable lab is more valuable than a collection of services that happen
 
 [OpenGitOps](https://opengitops.dev/) describes four principles: declarative desired state, versioned and immutable history, automatic pull, and continuous reconciliation. A CI job that runs `kubectl apply` once is a useful deployment workflow, but does not continuously reconcile later drift. Similarly, a scheduled Terraform plan can detect differences without automatically correcting them. Call these workflows accurately. This series starts with reviewed CI deployments; optional Flux adds a true pull/reconcile loop later.
 
-## Boot order: avoid the circular dependencies
+## Shared prerequisites, then the selected platform
 
 | Stage | Build and prove | Why it comes first |
 |---|---|---|
 | 0. Recovery basics | Administrative SSH/console path, inventory, safe backups, independent clock/NTP | You need a way to recover when automation is unavailable. |
 | 1. Network + bootstrap DNS | LAN/VLAN addressing, routing, reserved IPs, trusted resolver, local authoritative zones | GitLab and cluster names must resolve before their services exist. |
-| 2. Independent local GitLab | Ubuntu VM or bare metal, HTTPS, persistent data, restore procedure | The Git server cannot depend on a cluster pipeline that needs that Git server to bootstrap. |
-| 3. Your private repositories | Import reviewed app/Terraform/manifests/migration code into local GitLab | Your deployment configuration now has a reachable owner and history. |
+| 2. Selected source platform | GitHub private source immediately; or independent local GitLab with HTTPS/data/restore | Self-managed GitLab cannot bootstrap through its own unavailable CI. GitHub has no local GitLab prerequisite. |
+| 3. Your private repositories | Create/import reviewed code into the chosen private GitHub repository or GitLab project | Your deployment configuration now has a reachable owner and history. |
 | 4. Scoped runners | Dedicated execution host, trusted builds, protected secrets, isolated untrusted jobs | Automation runs with only the access it needs. |
 | 5. Infrastructure plans | State locking, full plan review, protected manual apply | Learn destructive-change review before handing it to a pipeline. |
 | 6. Kubernetes, then Rancher | kubeadm networking/storage/readiness, tested recovery; optional Rancher management | Management software depends on a healthy cluster, not the reverse. |
-| 7. Agent + workloads | KAS/agent connection, namespace RBAC, explicit deploy context | Reach the cluster without distributing administrator kubeconfigs to jobs. |
+| 7. Cluster access + workloads | GitHub scoped kubeconfig; or GitLab KAS agent, namespace RBAC, explicit context | Use the integration belonging to your chosen CI platform. |
 | 8. Data + observability | Reviewed Flyway changes, Loki/Grafana/Tempo/Mimir, alerts and retention | Verify application behavior and recovery, not only green job status. |
 | 9. Optional Flux | Narrow Git sources, reconciliation scope and rollback/prune policy | Add continuous convergence after you understand the deployed resources. |
 
@@ -29,9 +43,9 @@ The sibling labs are independent starting points: [GitLab](https://github.com/Ra
 
 ## Public examples versus your private source of truth
 
-A public GitHub example is a teaching artifact with generic values. Your home GitLab repositories own your real IPs, release pins and reviewed configuration. Even a **private** repository must not contain tokens, passwords, unseal shares, private keys, kubeconfigs or Terraform state. Maintain your own fork/configuration; do not enable an upstream example's deployment pipeline blindly.
+A public GitHub example is a teaching artifact with generic values. Your chosen private GitHub repositories or GitLab projects own your real IPs, release pins and reviewed configuration. Even a **private** repository must not contain tokens, passwords, unseal shares, private keys, kubeconfigs or Terraform state. Maintain your own fork/configuration; do not enable an upstream example's deployment pipeline blindly.
 
-On your workstation, after your own GitLab is healthy and you explicitly decide to import:
+The following import block belongs only to the GitLab path, after that instance is healthy. The separate GitHub path is in [GITHUB-CI.md](docs/GITHUB-CI.md):
 
 ```bash
 export GITLAB_HOST=gitlab.example.test
@@ -65,13 +79,13 @@ Name one owner for every resource. A small lab may combine directories in one re
 
 ## Runners, plans and changes with consequences
 
-Use dedicated runners for privileged infrastructure jobs. A Docker socket mount gives effective host control; a shell executor runs on the host. Avoid sharing those execution environments with untrusted merge-request code. A runner tag routes jobs; it is not an authorization boundary. Configure project scope, protected refs and credential access explicitly using the GitLab API/CLI for your version. Protect the actual default branch and require review before merging.
+Use dedicated runners for privileged infrastructure jobs. A Docker socket mount gives effective host control; a shell executor runs on the host. Avoid sharing those execution environments with untrusted merge-request code. A runner tag routes jobs; it is not an authorization boundary. Configure project scope, protected refs and credential access explicitly using the selected platform API/CLI for your version. Protect the actual default branch and require review before merging.
 
 For Terraform, start with validate/format in merge requests and plans with the lowest necessary provider permissions. Plans and state may contain sensitive infrastructure values: do not publish plan artifacts or logs publicly. Apply only a reviewed saved plan for the same commit/provider lock/state lineage, with remote state locking and one serialized apply lane. Use a protected manual job; manual alone does not mean authorized. Re-plan after drift or stale artifacts. A green plan does not prove an apply is safe; inspect replacements, deletes, cloud-init changes and disk/network effects.
 
 Use env/secret-manager credentials, short lifetimes and separate read/plan versus write/apply authority when the provider supports them. Protected/masked variables reduce accidental access/output; they cannot make a malicious script safe. Back up affected configuration before changes and verify the recovery path. Keep a documented emergency administrative path independent of GitLab jobs.
 
-## KAS and agentk: connectivity, not a universal controller
+## Optional GitLab path: KAS and agentk
 
 KAS means **Kubernetes Agent Server** (current docs also call it GitLab Relay). It runs on the GitLab side; `agentk` runs in Kubernetes. The usual agent establishes an outbound connection to KAS. An administrator must configure the self-managed endpoint and trusted TLS; confirm the exact URL for your GitLab installation. [KAS administration](https://docs.gitlab.com/administration/clusters/kas/)
 
@@ -98,7 +112,7 @@ For Loki/Grafana/Tempo/Mimir, first prove collection and retention, then dashboa
 ## Review checklist before enabling anything
 
 - Workstation/runner/cluster resolve local names, trust certificates and agree on time.
-- GitLab works independently of Kubernetes; administrative recovery access is documented.
+- When choosing self-managed GitLab, it works independently of Kubernetes; recovery access is documented.
 - Repositories have clear owners; public examples and real private configuration are separate.
 - State, tokens and private keys are outside Git; backups are encrypted off-host and restore-tested.
 - Runner and agent permissions are scoped; expected `can-i` operations succeed and forbidden operations fail.
@@ -107,12 +121,6 @@ For Loki/Grafana/Tempo/Mimir, first prove collection and retention, then dashboa
 
 This guide was checked against official documentation on 2026-10-03. YAML syntax and embedded Bash can be checked locally; no account, runner, cluster, permission, deployment or recovery behavior is claimed as executed here.
 
-## Functional CI and public/private copies
+## Functional CI and platform ownership
 
-This guide's actual GitHub Actions workflow validates YAML and embedded Bash on hosted runners with read-only permissions. Its actual GitLab pipeline manually applies only the non-secret demo ConfigMap through KAS when `DEPLOY_ENABLED=true`, the branch is protected and default, an authorized environment/context is selected, and your scoped runner is configured. Public example hosting does not create a cluster or receive deployment secrets. For Terraform/service labs, use each sibling's real GitHub plan/provision/deploy workflow in **your private copy**, or its private home GitLab manual jobs.
-
-Create your private copy explicitly with `gh repo create YOUR_USER/homelab-gitops-guide --private --source . --remote deployment --push` after reviewing the cloned public code. GitHub self-hosted deploy jobs in the Terraform labs refuse the canonical RayEvelyn owner and public repositories. Do not register self-hosted runners on public PR execution.
-
-Those VM labs use a dedicated permanent Linux runner and Terraform local state at `TF_STATE_ROOT/github-<repository_id>` or `TF_STATE_ROOT/gitlab-<project_id>`, outside the checkout/temp directories. Local backend locks, whole-run flock and CI serialization require the **same host/path** each time; encrypted off-host backups are essential. Never cache/upload state or plans as CI artifacts or start empty state on a new runner. Migrate bootstrap state deliberately before CI takes ownership. Default action is plan; provision creates the VM without SSH trust, then independently verify its host fingerprint and dispatch deploy. `prevent_destroy` blocks VM replacement until a separately reviewed retirement change.
-
-See the public [GitLab VM repository](https://github.com/RayEvelyn/gitlab-proxmox-terraform) and [Vault VM repository](https://github.com/RayEvelyn/vault-proxmox-lab) for credential/SSH/CA contracts, CLI setup and phase ordering. These source examples teach a workflow; your private GitLab projects remain the owner of your real configuration.
+Hosted GitHub validation checks the public examples without deployment credentials. For private execution choose [GitHub source + Actions + scoped kubeconfig](docs/GITHUB-CI.md) or [GitLab source + CI + KAS](docs/GITLAB-CI.md). Both demo deploy jobs apply the same nonsecret ConfigMap with namespace/RBAC checks, and both require explicit enablement. Neither is continuous reconciliation. VM state belongs to one chosen platform/runner path; changing platforms requires a reviewed state migration, not two simultaneous owners.

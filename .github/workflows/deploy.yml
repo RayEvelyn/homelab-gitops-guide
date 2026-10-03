@@ -1,0 +1,21 @@
+name: Deploy private ConfigMap through GitHub
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: configmap-${{ github.repository_id }}
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.event.repository.private && vars.DEPLOY_ENABLED == 'true' && github.ref_name == github.event.repository.default_branch
+    runs-on: [self-hosted, linux, homelab]
+    environment: homelab
+    env:
+      HOMELAB_KUBECONFIG: ${{ secrets.HOMELAB_KUBECONFIG }}
+      EXPECTED_CONTEXT: ${{ vars.EXPECTED_CONTEXT }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: ./scripts/github-deploy.sh

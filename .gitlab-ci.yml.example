@@ -1,7 +1,18 @@
-# Disabled by .example suffix. Copy only after project/branch/runner/RBAC review.
+# Disabled copy for reference; actual jobs live in .gitlab-ci.yml.
+# Functional private home GitLab deploy; opt-in DEPLOY_ENABLED required.
 # KUBECTL_IMAGE must be a reviewed image@sha256:... containing kubectl and Bash,
 # compatible with the target Kubernetes version and trusting your KAS TLS CA.
-stages: [deploy]
+stages: [validate, deploy]
+validate:
+  stage: validate
+  image: python:3.12-alpine
+  tags: [validation]
+  before_script:
+    - apk add --no-cache bash
+    - pip install PyYAML==6.0.3
+  script:
+    - python ci/validate.py
+    - python -m unittest discover -s tests -v
 manual_lab_deploy:
   stage: deploy
   image:
@@ -15,7 +26,7 @@ manual_lab_deploy:
     KUBE_CONTEXT: homelab/cluster-bootstrap:lab
     DEPLOY_NAMESPACE: demo
   rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true"'
+    - if: '$CI_PROJECT_VISIBILITY == "private" && $DEPLOY_ENABLED == "true" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true"'
       when: manual
     - when: never
   allow_failure: false

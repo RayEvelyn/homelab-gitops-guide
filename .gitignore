@@ -6,3 +6,7 @@
 secrets/
 kubeconfig*
 .DS_Store
+
+__pycache__/
+*.pyc
+configs/*.local.json
