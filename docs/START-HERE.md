@@ -6,4 +6,4 @@ Start with local networking, trusted time, an administrative recovery path and b
 
 Public example repositories contain generic teaching values; your private home GitLab owns your actual configuration. Neither should contain passwords, private keys, agent tokens, kubeconfigs, Terraform state or unseal shares. Credentials belong in protected runtime/secret-manager paths. Git revert does not restore database data or deleted storage.
 
-Read the [complete series guide](../README.md) in this repository, or [the sibling guide](../../homelab-gitops-guide/README.md) if this reusable file was copied into another lab's `docs/` directory. Links assume the review bundle layout; adapt them when publishing individual repositories. Nothing in this document is permission to push, apply or publish.
+Read the [complete series guide](https://github.com/RayEvelyn/homelab-gitops-guide#readme) for clone links, bootstrap order and the reasons behind each repository.
