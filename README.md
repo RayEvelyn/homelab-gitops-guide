@@ -1,6 +1,6 @@
 # Start here: a homelab you can explain, rebuild and recover
 
-This guide connects the individual examples into a practical learning sequence. Build local networking and DNS first, bootstrap GitLab independently, put your remaining infrastructure code into your own GitLab projects, and add scoped automation in stages. **This repository is a local review artifact. Nothing here creates an account, publishes code or applies infrastructure when opened.** Commands are examples to adapt and review before running in your own lab.
+This guide connects the individual examples into a practical learning sequence. Build local networking and DNS first, bootstrap GitLab independently, put your remaining infrastructure code into your own GitLab projects, and add scoped automation in stages. **Public teaching code is safe to inspect: opening it does not create accounts or apply infrastructure. Hosted CI validates it; private home GitLab deployment is explicitly opt-in.** Commands are examples to adapt and review before running in your own lab.
 
 ## Why GitOps?
 
@@ -81,7 +81,7 @@ Copy [.gitlab/agents/lab/config.yaml.example](.gitlab/agents/lab/config.yaml.exa
 
 [examples/namespace-rbac.yaml](examples/namespace-rbac.yaml) illustrates a narrow `demo` namespace ConfigMap deployer without Secret/RBAC/workload/cluster-admin permissions. An existing administrator creates the namespace/account/binding as a reviewed bootstrap step, then configures the agent chart to use that account. Chart flags/schema vary: inspect the pinned chart with `helm show values` and render it before installation. This example does not install an agent or create a token.
 
-The disabled [.gitlab-ci.yml.example](.gitlab-ci.yml.example) deploys only the included non-secret ConfigMap through a protected-default-branch manual job, fixed namespace and explicit `kubectl auth can-i` checks. Set a **reviewed kubectl image digest** as `KUBECTL_IMAGE`, protect the branch/runner, and enable only after adapting the manifests. Environment protection is a separate GitLab feature with tier restrictions; do not assume CE has every approval gate. [Protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+The functional [.gitlab-ci.yml](.gitlab-ci.yml) (with an optional disabled [.example copy](.gitlab-ci.yml.example)) deploys only the included non-secret ConfigMap through a protected-default-branch manual job, fixed namespace and explicit `kubectl auth can-i` checks. Set a **reviewed kubectl image digest** as `KUBECTL_IMAGE`, protect the branch/runner, and enable only after adapting the manifests. Environment protection is a separate GitLab feature with tier restrictions; do not assume CE has every approval gate. [Protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
 
 ## Add reconciliation when you are ready
 
@@ -106,3 +106,13 @@ For Loki/Grafana/Tempo/Mimir, first prove collection and retention, then dashboa
 - Startup, health, alert delivery and recovery are verified for the actual target.
 
 This guide was checked against official documentation on 2026-10-03. YAML syntax and embedded Bash can be checked locally; no account, runner, cluster, permission, deployment or recovery behavior is claimed as executed here.
+
+## Functional CI and public/private copies
+
+This guide's actual GitHub Actions workflow validates YAML and embedded Bash on hosted runners with read-only permissions. Its actual GitLab pipeline manually applies only the non-secret demo ConfigMap through KAS when `DEPLOY_ENABLED=true`, the branch is protected and default, an authorized environment/context is selected, and your scoped runner is configured. Public example hosting does not create a cluster or receive deployment secrets. For Terraform/service labs, use each sibling's real GitHub plan/provision/deploy workflow in **your private copy**, or its private home GitLab manual jobs.
+
+Create your private copy explicitly with `gh repo create YOUR_USER/homelab-gitops-guide --private --source . --remote deployment --push` after reviewing the cloned public code. GitHub self-hosted deploy jobs in the Terraform labs refuse the canonical RayEvelyn owner and public repositories. Do not register self-hosted runners on public PR execution.
+
+Those VM labs use a dedicated permanent Linux runner and Terraform local state at `TF_STATE_ROOT/github-<repository_id>` or `TF_STATE_ROOT/gitlab-<project_id>`, outside the checkout/temp directories. Local backend locks, whole-run flock and CI serialization require the **same host/path** each time; encrypted off-host backups are essential. Never cache/upload state or plans as CI artifacts or start empty state on a new runner. Migrate bootstrap state deliberately before CI takes ownership. Default action is plan; provision creates the VM without SSH trust, then independently verify its host fingerprint and dispatch deploy. `prevent_destroy` blocks VM replacement until a separately reviewed retirement change.
+
+See the public [GitLab VM repository](https://github.com/RayEvelyn/gitlab-proxmox-terraform) and [Vault VM repository](https://github.com/RayEvelyn/vault-proxmox-lab) for credential/SSH/CA contracts, CLI setup and phase ordering. These source examples teach a workflow; your private GitLab projects remain the owner of your real configuration.
