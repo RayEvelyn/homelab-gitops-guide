@@ -1,0 +1,142 @@
+{
+  "reserve_memory_mb": 2048,
+  "reserve_storage_gib": 20,
+  "cpu_overcommit_ratio": 1.0,
+  "components": [
+    {
+      "name": "gitlab",
+      "repo": "gitlab-proxmox-terraform",
+      "node": "pve",
+      "storage": "local-lvm",
+      "cpu_cores": 4,
+      "memory_mb": 8192,
+      "disk_gib": 80,
+      "terraform_inputs": {
+        "vm_name": "gitlab-lab",
+        "node_name": "pve",
+        "vm_id": 110,
+        "template_id": 9000,
+        "datastore_id": "local-lvm",
+        "bridge": "vmbr0",
+        "ip_cidr": "192.0.2.110/24",
+        "gateway": "192.0.2.1",
+        "dns_servers": [
+          "192.0.2.1"
+        ],
+        "ssh_public_key_path": "/home/ubuntu/.ssh/id_ed25519.pub",
+        "cores": 4,
+        "memory_mb": 8192
+      },
+      "lab_hostname": "gitlab.lab.test",
+      "image": "gitlab/gitlab-ce:19.4.1-ce.0"
+    },
+    {
+      "name": "vault",
+      "repo": "vault-proxmox-lab",
+      "node": "pve",
+      "storage": "local-lvm",
+      "cpu_cores": 2,
+      "memory_mb": 2048,
+      "disk_gib": 80,
+      "terraform_inputs": {
+        "vm_name": "vault-lab",
+        "node_name": "pve",
+        "vm_id": 111,
+        "template_id": 9000,
+        "datastore_id": "local-lvm",
+        "bridge": "vmbr0",
+        "ip_cidr": "192.0.2.111/24",
+        "gateway": "192.0.2.1",
+        "dns_servers": [
+          "192.0.2.1"
+        ],
+        "ssh_public_key_path": "/home/ubuntu/.ssh/id_ed25519.pub",
+        "cores": 2,
+        "memory_mb": 2048
+      },
+      "lab_hostname": "vault.lab.test",
+      "image": "hashicorp/vault:2.1.1"
+    },
+    {
+      "name": "dns-authoritative",
+      "repo": "powerdns-authoritative-lab",
+      "node": "pve",
+      "storage": "local-lvm",
+      "cpu_cores": 2,
+      "memory_mb": 2048,
+      "disk_gib": 80,
+      "terraform_inputs": {
+        "vm_name": "dns-authoritative-lab",
+        "node_name": "pve",
+        "vm_id": 112,
+        "template_id": 9000,
+        "datastore_id": "local-lvm",
+        "bridge": "vmbr0",
+        "ip_cidr": "192.0.2.112/24",
+        "gateway": "192.0.2.1",
+        "dns_servers": [
+          "192.0.2.1"
+        ],
+        "ssh_public_key_path": "/home/ubuntu/.ssh/id_ed25519.pub",
+        "cores": 2,
+        "memory_mb": 2048
+      },
+      "lab_hostname": "dns-authoritative.lab.test"
+    },
+    {
+      "name": "dns-recursor",
+      "repo": "powerdns-recursor-lab",
+      "node": "pve",
+      "storage": "local-lvm",
+      "cpu_cores": 2,
+      "memory_mb": 2048,
+      "disk_gib": 80,
+      "terraform_inputs": {
+        "vm_name": "dns-recursor-lab",
+        "node_name": "pve",
+        "vm_id": 113,
+        "template_id": 9000,
+        "datastore_id": "local-lvm",
+        "bridge": "vmbr0",
+        "ip_cidr": "192.0.2.113/24",
+        "gateway": "192.0.2.1",
+        "dns_servers": [
+          "192.0.2.1"
+        ],
+        "ssh_public_key_path": "/home/ubuntu/.ssh/id_ed25519.pub",
+        "cores": 2,
+        "memory_mb": 2048
+      },
+      "lab_hostname": "dns-recursor.lab.test",
+      "dns_allowed_cidrs": [
+        "192.0.2.0/24"
+      ]
+    },
+    {
+      "name": "postgres",
+      "repo": "postgres-flyway-lab",
+      "node": "pve",
+      "storage": "local-lvm",
+      "cpu_cores": 2,
+      "memory_mb": 4096,
+      "disk_gib": 80,
+      "terraform_inputs": {
+        "vm_name": "postgres-lab",
+        "node_name": "pve",
+        "vm_id": 114,
+        "template_id": 9000,
+        "datastore_id": "local-lvm",
+        "bridge": "vmbr0",
+        "ip_cidr": "192.0.2.114/24",
+        "gateway": "192.0.2.1",
+        "dns_servers": [
+          "192.0.2.1"
+        ],
+        "ssh_public_key_path": "/home/ubuntu/.ssh/id_ed25519.pub",
+        "cores": 2,
+        "memory_mb": 4096
+      },
+      "lab_hostname": "postgres.lab.test"
+    }
+  ]
+}
